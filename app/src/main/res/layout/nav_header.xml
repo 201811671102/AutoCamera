@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:background="@mipmap/nav_header_bg"
+    android:layout_width="match_parent"
+    android:layout_height="300dp"
+    android:padding="10dp">
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/nav_header_img"
+        android:clickable="true"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@mipmap/nav_header_img"
+        android:layout_centerInParent="true"/>
+</RelativeLayout>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/start_image"
+        android:clickable="true"
+        android:src="@drawable/start"
+        android:layout_centerInParent="true"
+        android:layout_width="200dp"
+        android:layout_height="200dp"/>
+    <EditText
+        android:id="@+id/start_time"
+        android:layout_marginTop="20dp"
+        android:layout_below="@+id/start_image"
+        android:layout_centerHorizontal="true"
+        android:hint="@string/second"
+        android:textSize="36sp"
+        android:inputType="number"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+</RelativeLayout>

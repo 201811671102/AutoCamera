@@ -2,6 +2,7 @@ package pre.cg.camera.activity;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -16,13 +17,16 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
@@ -78,6 +82,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /*changefragment*/
     private FragmentManager fragmentManager;
     private FrameLayout frameLayout;
+    private boolean autoCameraOn;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -167,21 +172,89 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.fab:
-                mainFragment.stopAuto();
+               AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                if (mainFragment.cameraState()){
+                    if (autoCameraOn) {
+                        builder.setTitle("自动拍照");
+                        builder.setMessage("关闭自动拍照");
+                        builder.setIcon(R.drawable.alter);
+                        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                                mainFragment.stopAuto();
+                                autoCameraOn = false;
+                            }
+                        });
+                        builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        });
+                        builder.create().show();
+                        break;
+                    }
+                }
+                builder.setTitle("自动拍照");
+                builder.setMessage("没有开启自动拍照");
+                builder.setIcon(R.drawable.alter);
+                builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                builder.create().show();
                 break;
             case R.id.start_image:
                 hideFragment(guideFragment);
                 mainFragment.startPreview(cameraId);
                 if (autoTime != null && !autoTime.isEmpty()){
                     mainFragment.startAutoPicture(Long.parseLong(autoTime));
+                    autoCameraOn = true;
                 }
                 toolbar.getMenu().findItem(R.id.camera).setVisible(true);
                 autoTime = null;
                 hideInput();
                 break;
+            case R.id.clearAll:
+                LitePal.deleteAll("PictureFile");
+                AlertDialog.Builder clearAllBuild = new AlertDialog.Builder(this);
+                clearAllBuild.setTitle("清空缓存");
+                clearAllBuild.setMessage("清空所有文件");
+                clearAllBuild.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        File file = new File(getExternalFilesDir("picture/").getPath());
+                        clearDir(file);
+                    }
+                });
+                clearAllBuild.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                clearAllBuild.create().show();
             default:
                 break;
         }
+    }
+    /*删除文件*/
+    public void  clearDir(File fileDir){
+        if (fileDir == null || fileDir.exists() || !fileDir.isDirectory()){
+            return;
+        }
+        for (File file : fileDir.listFiles()){
+            if (file.isDirectory()){
+                clearDir(file);
+            }else{
+                file.delete();
+            }
+        }
+        fileDir.delete();
     }
     /*初始化组件*/
     private void  initLayout(){
@@ -193,6 +266,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         navigationView = findViewById(R.id.nav_navigationView);
         navigationView.setCheckedItem(R.id.main);
         header = navigationView.getHeaderView(0);
+        TextView textView = header.findViewById(R.id.picture_path);
+        textView.setText("文件路径: "+getExternalFilesDir("picture").getPath());
+        Button clearAll = header.findViewById(R.id.clearAll);
+        clearAll.setOnClickListener(this::onClick);
         initNavigationViewMenu();
         /*ViewPage*/
         viewPager = findViewById(R.id.view_pager);
@@ -374,6 +451,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (mainFragment != null){
+            mainFragment.stopAuto();
+        }
     }
 
 }

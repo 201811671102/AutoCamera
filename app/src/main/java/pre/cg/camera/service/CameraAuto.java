@@ -27,6 +27,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.SystemClock;
+import android.util.Log;
 import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
@@ -45,6 +46,8 @@ import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import lombok.SneakyThrows;
 import pre.cg.camera.pojo.PictureFile;
@@ -260,7 +263,7 @@ public class CameraAuto extends Service {
                     request_build.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, getRange());
                     request_build.set(CaptureRequest.CONTROL_AE_LOCK, false);
                     request_build.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
-                    request_build.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_OFF);//关闭自动对焦
+                    request_build.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_AUTO);//自动对焦
                     request_build.addTarget(surface);
                     cameraDevice.createCaptureSession(Arrays.asList(surface, imageReader.getSurface()), cameraCaptureSession_stateCallback, handler);
                 } catch (CameraAccessException e) {
@@ -351,7 +354,7 @@ public class CameraAuto extends Service {
             request_build.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, getRange());//This line of code is used for adjusting the fps range and fixing the dark preview
             request_build.set(CaptureRequest.CONTROL_AE_LOCK, false);
             request_build.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
-            request_build.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_OFF);//关闭自动对焦
+            request_build.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_AUTO);//自动对焦
             request_build.set(CaptureRequest.JPEG_ORIENTATION, angleSize);
             Surface surface = imageReader.getSurface();
             captureRequestBuilder.addTarget(surface);
@@ -437,5 +440,4 @@ public class CameraAuto extends Service {
            openCamera();
        }
     }
-
 }

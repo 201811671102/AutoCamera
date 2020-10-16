@@ -10,4 +10,5 @@
     <string name="camera_external">外置摄像头</string>
     <string name="sure">确认修改</string>
     <string name="second">定时拍照间隔秒数</string>
+    <string name="deleteAll">清空照片存储</string>
 </resources>

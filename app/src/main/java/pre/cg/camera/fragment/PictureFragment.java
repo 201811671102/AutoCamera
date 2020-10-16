@@ -82,6 +82,7 @@ public class PictureFragment extends Fragment{
         recyclerView.setLayoutManager(gridLayoutManager);
         initData();
         recyclerView.setAdapter(pictureAdapterCheck);
+    //    pictureAdapterCheck.notifyDataSetChanged();
     }
     /*获取（追加）数据*/
     public void initData(){

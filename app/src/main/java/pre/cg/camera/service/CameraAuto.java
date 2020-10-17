@@ -95,8 +95,9 @@ public class CameraAuto extends Service {
             angleSize = angle;
         }
 
-        public void switchCamera(String mcameraId) {
+        public void switchCamera(String mcameraId,Size size) {
             cameraId = mcameraId;
+            cameraSize = size;
             changeCamera();
         }
 
@@ -138,6 +139,9 @@ public class CameraAuto extends Service {
     @SneakyThrows
     @Override
     public void onDestroy() {
+        if(autoCamera){
+            autoCamera = false;
+        }
         super.onDestroy();
         if (imageReader != null){
             imageReader.close();
@@ -173,7 +177,7 @@ public class CameraAuto extends Service {
 
     /*初始化照片*/
     private void initImageReader() {
-        imageReader = ImageReader.newInstance(cameraSize.getWidth(), cameraSize.getHeight(), ImageFormat.JPEG, 2);
+        imageReader = ImageReader.newInstance(cameraSize.getWidth(), cameraSize.getHeight(), ImageFormat.JPEG, 1);
         imageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
             @Override
             public void onImageAvailable(ImageReader reader) {
@@ -263,7 +267,7 @@ public class CameraAuto extends Service {
                     request_build.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, getRange());
                     request_build.set(CaptureRequest.CONTROL_AE_LOCK, false);
                     request_build.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
-                    request_build.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_AUTO);//自动对焦
+                    request_build.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_OFF);//关闭自动对焦
                     request_build.addTarget(surface);
                     cameraDevice.createCaptureSession(Arrays.asList(surface, imageReader.getSurface()), cameraCaptureSession_stateCallback, handler);
                 } catch (CameraAccessException e) {
@@ -351,11 +355,10 @@ public class CameraAuto extends Service {
         CaptureRequest.Builder captureRequestBuilder = null;
         try {
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
-            request_build.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, getRange());//This line of code is used for adjusting the fps range and fixing the dark preview
-            request_build.set(CaptureRequest.CONTROL_AE_LOCK, false);
-            request_build.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
-            request_build.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_AUTO);//自动对焦
-            request_build.set(CaptureRequest.JPEG_ORIENTATION, angleSize);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, getRange());//This line of code is used for adjusting the fps range and fixing the dark preview
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_OFF);//关闭自动对焦
             Surface surface = imageReader.getSurface();
             captureRequestBuilder.addTarget(surface);
             CaptureRequest request = captureRequestBuilder.build();
@@ -394,9 +397,6 @@ public class CameraAuto extends Service {
     }
     /*关闭摄像头，释放资源*/
     private void closeCamera(){
-        if(autoCamera){
-            autoCamera = false;
-        }
         if (cameraCaptureSession != null){
             try {
                 cameraCaptureSession.stopRepeating();
@@ -407,15 +407,16 @@ public class CameraAuto extends Service {
             cameraCaptureSession.close();
             cameraCaptureSession = null;
         }
+
         if (cameraDevice != null){
             cameraDevice.close();
             cameraDevice = null;
         }
-        cameraManager = null;
         if (handler != null){
             handler.removeCallbacksAndMessages(null);
             handler = null;
-        }  if (request_build != null) {
+        }
+        if (request_build != null) {
             request_build.removeTarget(surface);
             request_build = null;
         }
@@ -431,8 +432,6 @@ public class CameraAuto extends Service {
     /*切换摄像头*/
     private void changeCamera(){
        closeCamera();
-       initChildThread();
-       initCameraManage();
        initImageReader();
        if (!textureView.isAvailable()){
            initTextureViewListener();

@@ -45,17 +45,18 @@ public class PictureAdapterCheck extends RecyclerView.Adapter<PictureAdapterChec
         PictureFile pictureFile = pictureFileList.get(position);
         Glide.with(context).load(pictureFile.getUrl()).into(holder.imageView);
         holder.textView.setText(pictureFile.getDate());
-        holder.clickView.setVisibility(View.VISIBLE);
+        holder.clickView.setVisibility(View.GONE);
+        holder.clickView.setImageResource(R.drawable.click);
         holder.imageView.setLongClickable(true);
         holder.imageView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
                 ImageView clickView = holder.clickView;
-                if ("delete".equals(clickView.getTag(position))) {
-                    clickView.setTag(position,"delete");
+                if (clickView.getVisibility() == View.VISIBLE){
+                    clickView.setVisibility(View.GONE);
                     pictureFileList.get(position).setDelete(false);
                 }else{
-                    clickView.setImageResource(R.drawable.click);
+                    clickView.setVisibility(View.VISIBLE);
                     pictureFileList.get(position).setDelete(true);
                 }
                 return true;

@@ -57,4 +57,7 @@ public class GuideFragment extends Fragment {
     public void inputTime(){
         editText.setVisibility(View.VISIBLE);
     }
+    public void clearInput(){
+        editText.setText("");
+    }
 }

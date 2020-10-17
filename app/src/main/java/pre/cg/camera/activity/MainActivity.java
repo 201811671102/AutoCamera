@@ -10,6 +10,7 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -83,6 +84,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private FragmentManager fragmentManager;
     private FrameLayout frameLayout;
     private boolean autoCameraOn;
+    private AlertDialog.Builder alterBuilder;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -98,7 +100,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             actionBar.setHomeAsUpIndicator(R.drawable.more);
         }
         initFragment();
+        alterBuilder = new AlertDialog.Builder(this);
     }
+
+    @Override
+    protected void onRestart() {
+        initAlterDialog("重启提示","服务重启，自动拍照已经停止","确定",new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        },null,null).show();
+        super.onRestart();
+    }
+
     /*创建导航栏菜单*/
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -126,6 +141,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
        if (mainFragment != null) {
            if (!mainFragment.cameraState()) {
                menu.findItem(R.id.camera).setVisible(false);
+               menu.findItem(R.id.clock).setVisible(false);
            }
        }
        menu.findItem(R.id.behave).setVisible(false);
@@ -140,10 +156,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 drawerLayout.openDrawer(GravityCompat.START);
                 break;
             case R.id.camera_front:
-                changeCamera(camera_id_map.get(R.id.camera_front));
+                initAlterDialog("警告","切换摄像头将停止自动拍照","确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        changeCamera(camera_id_map.get(R.id.camera_front));
+                    }
+                },"取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                }).show();
                 break;
             case R.id.camera_back:
-                changeCamera(camera_id_map.get(R.id.camera_back));
+                initAlterDialog("警告","切换摄像头将停止自动拍照","确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        changeCamera(camera_id_map.get(R.id.camera_back));
+                    }
+                },"取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                }).show();
                 break;
             case R.id.camera_external:
                 changeCamera(camera_id_map.get(R.id.camera_external));
@@ -155,11 +193,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.delete:
                 List<PictureFile> pictureFiles = pictureFragment.deletePicture();
                 for (PictureFile pictureFile : pictureFiles){
-                    File file = getExternalFilesDir(pictureFile.getUrl());
+                    File file = new File(pictureFile.getUrl());
                     if (file.exists()){
-                        file.delete();
+                       file.delete();
                     }
-                    pictureFile.delete();
                 }
                 break;
             default:
@@ -172,79 +209,106 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.fab:
-               AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                String title,message,sure,cancel;
+                AlertDialog.OnClickListener sureOnclick,cancelOnclick;
                 if (mainFragment.cameraState()){
                     if (autoCameraOn) {
-                        builder.setTitle("自动拍照");
-                        builder.setMessage("关闭自动拍照");
-                        builder.setIcon(R.drawable.alter);
-                        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                        title="自动拍照";
+                        message="关闭自动拍照";
+                        sure="确定";
+                        sureOnclick = new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.dismiss();
                                 mainFragment.stopAuto();
                                 autoCameraOn = false;
                             }
-                        });
-                        builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                        };
+                        cancel = "取消";
+                        cancelOnclick = new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.dismiss();
                             }
-                        });
-                        builder.create().show();
+                        };
+                        initAlterDialog(title,message,sure,sureOnclick,cancel,cancelOnclick).show();
                         break;
                     }
                 }
-                builder.setTitle("自动拍照");
-                builder.setMessage("没有开启自动拍照");
-                builder.setIcon(R.drawable.alter);
-                builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                title = "自动拍照";
+                message = "没有开启自动拍照";
+                sure = "确定";
+                sureOnclick = new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
                     }
-                });
-                builder.create().show();
+                };
+                initAlterDialog(title,message,sure,sureOnclick,null,null).show();
                 break;
             case R.id.start_image:
                 hideFragment(guideFragment);
-                mainFragment.startPreview(cameraId);
-                if (autoTime != null && !autoTime.isEmpty()){
-                    mainFragment.startAutoPicture(Long.parseLong(autoTime));
-                    autoCameraOn = true;
+                if (!autoCameraOn){
+                    mainFragment.startPreview(cameraId);
+                    if (autoTime != null && !autoTime.isEmpty()){
+                        initAlterDialog("开启自动拍照","开启自动拍照，时间间隔为: "+autoTime+" 秒",
+                                "确定", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.dismiss();
+                                        mainFragment.startAutoPicture(Long.parseLong(autoTime));
+                                        autoCameraOn = true;
+                                        guideFragment.clearInput();
+                                        autoTime=null;
+                                    }
+                                },
+                                "取消", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.dismiss();
+                                        guideFragment.clearInput();
+                                        autoTime=null;
+                                    }
+                                }).show();
+                    }
+                    toolbar.getMenu().findItem(R.id.camera).setVisible(true);
+                    toolbar.getMenu().findItem(R.id.clock).setVisible(true);
                 }
-                toolbar.getMenu().findItem(R.id.camera).setVisible(true);
-                autoTime = null;
                 hideInput();
                 break;
             case R.id.clearAll:
                 LitePal.deleteAll("PictureFile");
-                AlertDialog.Builder clearAllBuild = new AlertDialog.Builder(this);
-                clearAllBuild.setTitle("清空缓存");
-                clearAllBuild.setMessage("清空所有文件");
-                clearAllBuild.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                        File file = new File(getExternalFilesDir("picture/").getPath());
-                        clearDir(file);
-                    }
-                });
-                clearAllBuild.setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                });
-                clearAllBuild.create().show();
+                initAlterDialog("清空缓存","清空所有文件",
+                        "确定", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                                File file = new File("/storage/emulated/0/Android/data/pre.cg.camera/files/picture");
+                                clearDir(file);
+                            }
+                        },
+                        "取消", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        }).show();
             default:
                 break;
         }
     }
+    /*初始化弹窗通知*/
+    private AlertDialog initAlterDialog(String title,String message,String sure,AlertDialog.OnClickListener sureOnclick,String cancel,AlertDialog.OnClickListener cancelOnclick){
+        alterBuilder.setTitle(title);
+        alterBuilder.setMessage(message);
+        alterBuilder.setIcon(R.drawable.alter);
+        alterBuilder.setPositiveButton(sure,sureOnclick);
+        alterBuilder.setNegativeButton(cancel,cancelOnclick);
+        return alterBuilder.create();
+    }
     /*删除文件*/
     public void  clearDir(File fileDir){
-        if (fileDir == null || fileDir.exists() || !fileDir.isDirectory()){
+        if (fileDir == null || !fileDir.exists() || !fileDir.isDirectory()){
             return;
         }
         for (File file : fileDir.listFiles()){
@@ -335,7 +399,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
     /*初始化碎片*/
-    private void initFragment(){
+    private void initFragment()   {
         initPermission();
         FragmentAdapter fragmentAdapter = new FragmentAdapter(getSupportFragmentManager());
         mainFragment = new MainFragment();
@@ -448,12 +512,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             default:
         }
     }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mainFragment.closeAll();
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mainFragment != null){
-            mainFragment.stopAuto();
-        }
+        mainFragment = null;
+        pictureFragment = null;
     }
 
 }

@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -150,11 +151,14 @@ public class PictureFragment extends Fragment{
     /*获取删除item*/
     public List<PictureFile> deletePicture(){
         List<PictureFile> pictureFiles = new ArrayList<>();
-        for (int i=0;i<pictureFileList.size();i++){
+        for (int i=0;i<pictureFileList.size();){
             if (pictureFileList.get(i).isDelete()){
+                int j = pictureFileList.get(i).delete();
                 pictureFiles.add(pictureFileList.get(i));
                 pictureFileList.remove(i);
                 pictureAdapterCheck.notifyItemRemoved(i);
+            }else{
+                i++;
             }
         }
         pictureAdapterCheck.notifyDataSetChanged();

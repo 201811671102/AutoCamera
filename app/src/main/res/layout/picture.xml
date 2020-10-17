@@ -17,7 +17,7 @@
             <ImageView
                 android:layout_gravity="top"
                 android:id="@+id/picture_file"
-                android:scaleType="centerCrop"
+                android:scaleType="center"
                 android:layout_width="match_parent"
                 android:layout_height="100dp" />
             <ImageView

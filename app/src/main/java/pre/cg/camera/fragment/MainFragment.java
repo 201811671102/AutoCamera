@@ -16,6 +16,7 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
@@ -63,6 +64,14 @@ public class MainFragment extends Fragment {
     };
 
     @Override
+    public void onResume() {
+        super.onResume();
+        if (cameraId!=null) {
+            startPreview(cameraId);
+        }
+    }
+
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.mainfragment,container,false);
         return view;
@@ -94,7 +103,7 @@ public class MainFragment extends Fragment {
             DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
             int deviceWidth = displayMetrics.widthPixels;
             int deviceHeigh = displayMetrics.heightPixels;
-            for (int j = 1; j < 81; j++) {
+            for (int j = 1; j < sizes.length; j++) {
                 for (int i = 0; i < sizes.length; i++) {
                     Size itemSize = sizes[i];
                     if (itemSize.getHeight() < (deviceWidth + j * 5) && itemSize.getHeight() > (deviceWidth - j * 5)) {
@@ -151,7 +160,8 @@ public class MainFragment extends Fragment {
     /*切换摄像头*/
     public void changeCamera(String cameraId){
         if (myBind!=null){
-            myBind.switchCamera(cameraId);
+            initHandlerMatchingSize();
+            myBind.switchCamera(cameraId,cameraSize);
         }
     }
     /*暂停拍照*/
@@ -194,10 +204,19 @@ public class MainFragment extends Fragment {
 
         return jpegOrientation;
     }
+
+    /*关闭一切*/
+    public void closeAll(){
+        activity.unbindService(serviceConnection);
+        activity.stopService(intent);
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
-        cameraManager = null;
-        activity.unbindService(serviceConnection);
+        if(cameraManager != null){
+            cameraManager = null;
+        }
+        closeAll();
     }
 }

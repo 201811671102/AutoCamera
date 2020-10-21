@@ -83,7 +83,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /*changefragment*/
     private FragmentManager fragmentManager;
     private FrameLayout frameLayout;
+    //是否在自动拍照
     private boolean autoCameraOn;
+    private TextView autoInfo;
     private AlertDialog.Builder alterBuilder;
 
     @Override
@@ -104,16 +106,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    protected void onRestart() {
-        initAlterDialog("重启提示","服务重启，自动拍照已经停止","确定",new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        },null,null).show();
-        super.onRestart();
+    protected void onResume() {
+        super.onResume();
+        initAutoInfo();
     }
 
+    /*侧边栏自动拍照信息提示*/
+    private void initAutoInfo(){
+        if (autoCameraOn){
+            autoInfo = findViewById(R.id.autoInfo);
+            autoInfo.setText("自动拍照已经启动，拍照间隔为："+getSharedPreferences("autoInfo",MODE_PRIVATE).getString("autoTime","")+" 秒");
+        }
+    }
     /*创建导航栏菜单*/
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -222,6 +226,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 dialog.dismiss();
                                 mainFragment.stopAuto();
                                 autoCameraOn = false;
+                                getSharedPreferences("autoInfo",MODE_PRIVATE).edit().remove("autoTime").apply();
+                                autoInfo.setText("");
                             }
                         };
                         cancel = "取消";
@@ -259,6 +265,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         mainFragment.startAutoPicture(Long.parseLong(autoTime));
                                         autoCameraOn = true;
                                         guideFragment.clearInput();
+                                        getSharedPreferences("autoInfo",MODE_PRIVATE).edit().putString("autoTime",autoTime).apply();
+                                        initAutoInfo();
                                         autoTime=null;
                                     }
                                 },
@@ -516,12 +524,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onPause() {
         super.onPause();
-        mainFragment.closeAll();
+        if (mainFragment!=null) {
+            mainFragment.closePreview();
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        getSharedPreferences("autoInfo",MODE_PRIVATE).edit().remove("autoTime").apply();
         mainFragment = null;
         pictureFragment = null;
     }

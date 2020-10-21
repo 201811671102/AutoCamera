@@ -106,6 +106,10 @@ public class CameraAuto extends Service {
         }
 
         public boolean cameraState(){return cameraON;}
+
+        public void stopPreview(){closePreview();}
+
+        public void reStartPreview(){backPreview();}
     }
 
     private MyBind myBind = new MyBind();
@@ -438,5 +442,13 @@ public class CameraAuto extends Service {
        }else{
            openCamera();
        }
+    }
+    /*关闭预览*/
+    private void closePreview(){
+        request_build.removeTarget(surface);
+    }
+    /*继续预览*/
+    private void backPreview(){
+        request_build.addTarget(surface);
     }
 }

@@ -13,6 +13,7 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.DisplayMetrics;
@@ -66,8 +67,8 @@ public class MainFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if (cameraId!=null) {
-            startPreview(cameraId);
+        if (myBind!=null) {
+            myBind.reStartPreview();
         }
     }
 
@@ -205,10 +206,11 @@ public class MainFragment extends Fragment {
         return jpegOrientation;
     }
 
-    /*关闭一切*/
-    public void closeAll(){
-        activity.unbindService(serviceConnection);
-        activity.stopService(intent);
+    /*关闭预览*/
+    public void closePreview(){
+        if (myBind!=null) {
+            myBind.stopPreview();
+        }
     }
 
     @Override
@@ -217,6 +219,6 @@ public class MainFragment extends Fragment {
         if(cameraManager != null){
             cameraManager = null;
         }
-        closeAll();
+        closePreview();
     }
 }
